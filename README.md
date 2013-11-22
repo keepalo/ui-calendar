@@ -1,4 +1,15 @@
-# ui-calendar directive [![Build Status](https://travis-ci.org/angular-ui/ui-calendar.png?branch=master)](https://travis-ci.org/angular-ui/ui-calendar)
+# Keepalo ui-calendar directive
+
+This repo was originally forked from the angular-ui/ui-calendar repository.  It has been modified for use specifically within Keepalo.
+
+#Changes
+Within keepalo we have a model structure that keeps all entities in a single source of truth (jorm).  The entities are not, by default, in a structure that is accepted by full calendar (and the ui-calendar directive).  To get around this issue, we have a function in our controller which can be called to retrieve and format events whenever the display in the calendar changes.  We have updated the directive to watch for changes in the view.  When the view changes, the directive will silently reset it's tokens, rather than the directive seeing that all of it's tokens are no longer valid and adding/removing a bunch of events from full calendar (which updates itself automatically by calling the controller function).  When the entities in angular actually change, a $scope.$apply will still cause token checking within the ui-calendar directive, which will then tell full calendar to refetch it's events.  This is much faster than having the directive add/remove each event when they change.
+
+Another addition that we made was the 'done' field.  We use this field for tasks within the calendar.  In the full calendar eventRender callback, we simply prepend a checkbox if the done field is present on the event, and then subscribe to change events on the checkbox and update 'done' accordingly.
+
+This version of ui-calendar is very specialized for our needs and breaks a lot of functionality built into ui-calendar to support all different types of input for the sake of speed that is added by our new functionality.
+
+#Original Description
 
 A complete AngularJS directive for the Arshaw FullCalendar.
 
