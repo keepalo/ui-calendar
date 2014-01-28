@@ -186,7 +186,9 @@ angular.module('ui.calendar', [])
               eventsWatcher.subscribe(scope, function (newTokens, oldTokens) {
                   // HERE IS THE SPECIAL SAUCE!!!!!!!
                   if (!viewChanged)
-                      scope.calendar.fullCalendar('refetchEvents');
+                      $timeout(function() {
+                          scope.calendar.fullCalendar('refetchEvents');
+                      });
                   
                   if (sourcesChanged) {
                       // Rerender the whole thing if a new event source was added/removed
