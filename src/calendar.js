@@ -34,182 +34,180 @@ angular.module('ui.calendar', [])
             scope: { ngModel: '=', config: '=' },
             restrict: 'A',
             link: function (scope, elm, attrs) {
-                require(['fullcalendar'], function() {
-                    var sources = scope.ngModel;
-                    var viewChanged = false;
-                    var viewDisplay = function (view) {
-                        viewChanged = true;
-                        $timeout(function () {
-                            viewChanged = false;
-                        });
-                    };
-                    scope.destroy = function () {
-                        if (attrs.calendar) {
-                            scope.calendar = scope.$parent[attrs.calendar] = elm.html('');
-                        } else {
-                            scope.calendar = elm.html('');
-                        }
-                    };
-                    scope.destroy();
-                    scope.init = function () {
-                        var userSettings = attrs.uiCalendar ? scope.$parent.$eval(attrs.uiCalendar) : {};
-                        var userViewDisplay = userSettings.viewDisplay
-                        uiCalendarConfig.viewDisplay = function (view) {
-                            if (userViewDisplay)
-                                userViewDisplay(view);
+				var sources = scope.ngModel;
+				var viewChanged = false;
+				var viewDisplay = function (view) {
+					viewChanged = true;
+					$timeout(function () {
+						viewChanged = false;
+					});
+				};
+				scope.destroy = function () {
+					if (attrs.calendar) {
+						scope.calendar = scope.$parent[attrs.calendar] = elm.html('');
+					} else {
+						scope.calendar = elm.html('');
+					}
+				};
+				scope.destroy();
+				scope.init = function () {
+					var userSettings = attrs.uiCalendar ? scope.$parent.$eval(attrs.uiCalendar) : {};
+					var userViewDisplay = userSettings.viewDisplay
+					uiCalendarConfig.viewDisplay = function (view) {
+						if (userViewDisplay)
+							userViewDisplay(view);
 
-                            viewDisplay(view);
-                        };
+						viewDisplay(view);
+					};
 
-                        delete userSettings.viewDisplay;
+					delete userSettings.viewDisplay;
 
-                        var options = { eventSources: sources };
-                        angular.extend(options, uiCalendarConfig, userSettings);
+					var options = { eventSources: sources };
+					angular.extend(options, uiCalendarConfig, userSettings);
 
-                        scope.calendar.fullCalendar(options);
+					scope.calendar.fullCalendar(options);
 
-                        if (options.defaultDate)
-                            scope.calendar.fullCalendar('gotoDate', options.defaultDate);
-                    };
+					if (options.defaultDate)
+						scope.calendar.fullCalendar('gotoDate', options.defaultDate);
+				};
 
-                    // load fullcalendar and then init
-                    scope.init();
+				// load fullcalendar and then init
+				scope.init();
 
-                    // Track changes in array by assigning id tokens to each element and watching the scope for changes in those tokens
-                    // arguments:
-                    //  arraySource array of function that returns array of objects to watch
-                    //  tokenFn function(object) that returns the token for a given object
-                    var changeWatcher = function (arraySource, tokenFn) {
-                        var self;
-                        var getTokens = function () {
-                            var array = angular.isFunction(arraySource) ? arraySource() : arraySource;
-                            return array.map(function (el) {
-                                var token = tokenFn(el);
-                                map[token] = el;
-                                return token;
-                            });
-                        };
-                        // returns elements in that are in a but not in b
-                        // subtractAsSets([4, 5, 6], [4, 5, 7]) => [6]
-                        var subtractAsSets = function (a, b) {
-                            var result = [], inB = {}, i, n;
-                            for (i = 0, n = b.length; i < n; i++) {
-                                inB[b[i]] = true;
-                            }
-                            for (i = 0, n = a.length; i < n; i++) {
-                                if (!inB[a[i]]) {
-                                    result.push(a[i]);
-                                }
-                            }
-                            return result;
-                        };
+				// Track changes in array by assigning id tokens to each element and watching the scope for changes in those tokens
+				// arguments:
+				//  arraySource array of function that returns array of objects to watch
+				//  tokenFn function(object) that returns the token for a given object
+				var changeWatcher = function (arraySource, tokenFn) {
+					var self;
+					var getTokens = function () {
+						var array = angular.isFunction(arraySource) ? arraySource() : arraySource;
+						return array.map(function (el) {
+							var token = tokenFn(el);
+							map[token] = el;
+							return token;
+						});
+					};
+					// returns elements in that are in a but not in b
+					// subtractAsSets([4, 5, 6], [4, 5, 7]) => [6]
+					var subtractAsSets = function (a, b) {
+						var result = [], inB = {}, i, n;
+						for (i = 0, n = b.length; i < n; i++) {
+							inB[b[i]] = true;
+						}
+						for (i = 0, n = a.length; i < n; i++) {
+							if (!inB[a[i]]) {
+								result.push(a[i]);
+							}
+						}
+						return result;
+					};
 
-                        // Map objects to tokens and vice-versa
-                        var map = {};
+					// Map objects to tokens and vice-versa
+					var map = {};
 
-                        var applyChanges = function (newTokens, oldTokens) {
-                            var i, n, el, token;
-                            var replacedTokens = {};
-                            var removedTokens = subtractAsSets(oldTokens, newTokens);
-                            for (i = 0, n = removedTokens.length; i < n; i++) {
-                                var removedToken = removedTokens[i];
-                                el = map[removedToken];
-                                delete map[removedToken];
-                                var newToken = tokenFn(el);
-                                // if the element wasn't removed but simply got a new token, its old token will be different from the current one
-                                if (newToken === removedToken) {
-                                    self.onRemoved(el);
-                                } else {
-                                    replacedTokens[newToken] = removedToken;
-                                    self.onChanged(el);
-                                }
-                            }
+					var applyChanges = function (newTokens, oldTokens) {
+						var i, n, el, token;
+						var replacedTokens = {};
+						var removedTokens = subtractAsSets(oldTokens, newTokens);
+						for (i = 0, n = removedTokens.length; i < n; i++) {
+							var removedToken = removedTokens[i];
+							el = map[removedToken];
+							delete map[removedToken];
+							var newToken = tokenFn(el);
+							// if the element wasn't removed but simply got a new token, its old token will be different from the current one
+							if (newToken === removedToken) {
+								self.onRemoved(el);
+							} else {
+								replacedTokens[newToken] = removedToken;
+								self.onChanged(el);
+							}
+						}
 
-                            var addedTokens = subtractAsSets(newTokens, oldTokens);
-                            for (i = 0, n = addedTokens.length; i < n; i++) {
-                                token = addedTokens[i];
-                                el = map[token];
-                                if (!replacedTokens[token]) {
-                                    self.onAdded(el);
-                                }
-                            }
-                        };
-                        return self = {
-                            subscribe: function (scope, onChanged) {
-                                scope.$watch(getTokens, function (newTokens, oldTokens) {
-                                    if (!onChanged || onChanged(newTokens, oldTokens) !== false) {
-                                        applyChanges(newTokens, oldTokens);
-                                    }
-                                }, true);
-                            },
-                            onAdded: angular.noop,
-                            onChanged: angular.noop,
-                            onRemoved: angular.noop
-                        };
-                    };
+						var addedTokens = subtractAsSets(newTokens, oldTokens);
+						for (i = 0, n = addedTokens.length; i < n; i++) {
+							token = addedTokens[i];
+							el = map[token];
+							if (!replacedTokens[token]) {
+								self.onAdded(el);
+							}
+						}
+					};
+					return self = {
+						subscribe: function (scope, onChanged) {
+							scope.$watch(getTokens, function (newTokens, oldTokens) {
+								if (!onChanged || onChanged(newTokens, oldTokens) !== false) {
+									applyChanges(newTokens, oldTokens);
+								}
+							}, true);
+						},
+						onAdded: angular.noop,
+						onChanged: angular.noop,
+						onRemoved: angular.noop
+					};
+				};
 
-                    //= tracking sources added/removed
+				//= tracking sources added/removed
 
-                    var sourcesChanged = false;
+				var sourcesChanged = false;
 
-                    var eventSourcesWatcher = changeWatcher(sources, function (source) {
-                        return source.__id || (source.__id = sourceSerialId++);
-                    });
-                    eventSourcesWatcher.subscribe(scope);
-                    eventSourcesWatcher.onAdded = function (source) {
-                        scope.calendar.fullCalendar('addEventSource', source);
-                        sourcesChanged = true;
-                    };
-                    eventSourcesWatcher.onRemoved = function (source) {
-                        scope.calendar.fullCalendar('removeEventSource', source);
-                        sourcesChanged = true;
-                    };
+				var eventSourcesWatcher = changeWatcher(sources, function (source) {
+					return source.__id || (source.__id = sourceSerialId++);
+				});
+				eventSourcesWatcher.subscribe(scope);
+				eventSourcesWatcher.onAdded = function (source) {
+					scope.calendar.fullCalendar('addEventSource', source);
+					sourcesChanged = true;
+				};
+				eventSourcesWatcher.onRemoved = function (source) {
+					scope.calendar.fullCalendar('removeEventSource', source);
+					sourcesChanged = true;
+				};
 
-                    //= tracking individual events added/changed/removed
-                    var allEvents = function () {
-                        // return sources.flatten(); but we don't have flatten
-                        var arraySources = [];
-                        for (var i = 0, srcLen = sources.length; i < srcLen; i++) {
-                            var source = sources[i];
-                            if (angular.isArray(source)) {
-                                arraySources.push(source);
-                            } else if (angular.isFunction(source.events)) {
-                                arraySources.push(source.events());
-                            }
-                        }
-                        return Array.prototype.concat.apply([], arraySources);
-                    };
-                    var eventsWatcher = changeWatcher(allEvents, function (e) {
-                        if (!e.__uiCalId) {
-                            e.__uiCalId = eventSerialId++;
-                        }
-                        // This extracts all the information we need from the event. http://jsperf.com/angular-calendar-events-fingerprint/3
-                        return "" + e.__uiCalId + (e.id || '') + (e.title || '') + (e.url || '') + (+e.start || '') + (+e.end || '') +
-                            (e.allDay || false) + (e.className || '') + (e.done || '') + (e.color || '');
-                    });
-                    eventsWatcher.subscribe(scope, function (newTokens, oldTokens) {
-                        // HERE IS THE SPECIAL SAUCE!!!!!!!
-                        if (!viewChanged)
-                            $timeout(function () {
-                                scope.calendar.fullCalendar('refetchEvents');
-                            });
+				//= tracking individual events added/changed/removed
+				var allEvents = function () {
+					// return sources.flatten(); but we don't have flatten
+					var arraySources = [];
+					for (var i = 0, srcLen = sources.length; i < srcLen; i++) {
+						var source = sources[i];
+						if (angular.isArray(source)) {
+							arraySources.push(source);
+						} else if (angular.isFunction(source.events)) {
+							arraySources.push(source.events());
+						}
+					}
+					return Array.prototype.concat.apply([], arraySources);
+				};
+				var eventsWatcher = changeWatcher(allEvents, function (e) {
+					if (!e.__uiCalId) {
+						e.__uiCalId = eventSerialId++;
+					}
+					// This extracts all the information we need from the event. http://jsperf.com/angular-calendar-events-fingerprint/3
+					return "" + e.__uiCalId + (e.id || '') + (e.title || '') + (e.url || '') + (+e.start || '') + (+e.end || '') +
+						(e.allDay || false) + (e.className || '') + (e.done || '') + (e.color || '');
+				});
+				eventsWatcher.subscribe(scope, function (newTokens, oldTokens) {
+					// HERE IS THE SPECIAL SAUCE!!!!!!!
+					if (!viewChanged)
+						$timeout(function () {
+							scope.calendar.fullCalendar('refetchEvents');
+						});
 
-                        if (sourcesChanged) {
-                            // Rerender the whole thing if a new event source was added/removed
-                            scope.calendar.fullCalendar('rerenderEvents');
-                            sourcesChanged = false;
-                            // prevent incremental updates in this case
-                            return false;
-                        }
-                    });
-                    eventsWatcher.onAdded = function (event) {
-                        // these events are now taken care of by the refetchEvents in eventsWatcher.subscribe!
-                    };
-                    eventsWatcher.onRemoved = function (event) {
-                    };
-                    eventsWatcher.onChanged = function (event) {
-                    };
-                });
+					if (sourcesChanged) {
+						// Rerender the whole thing if a new event source was added/removed
+						scope.calendar.fullCalendar('rerenderEvents');
+						sourcesChanged = false;
+						// prevent incremental updates in this case
+						return false;
+					}
+				});
+				eventsWatcher.onAdded = function (event) {
+					// these events are now taken care of by the refetchEvents in eventsWatcher.subscribe!
+				};
+				eventsWatcher.onRemoved = function (event) {
+				};
+				eventsWatcher.onChanged = function (event) {
+				};
             }
         };
     }]);
