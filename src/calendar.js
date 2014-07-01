@@ -34,7 +34,7 @@ angular.module('ui.calendar', [])
             scope: { ngModel: '=', config: '=' },
             restrict: 'A',
             link: function (scope, elm, attrs) {
-                require(['fullcalendar', 'tz-data'], function() {
+                require(['fullcalendar'], function() {
                     var sources = scope.ngModel;
                     var viewChanged = false;
                     var viewDisplay = function (view) {
